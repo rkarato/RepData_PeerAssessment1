@@ -6,20 +6,83 @@ output:
 ---
 
 
+
 ## Loading and preprocessing the data
+
+```{r, echo = TRUE, results="hide",warning=FALSE, message=FALSE }
+unzip("activity.zip")
+act <- read.csv("activity.csv")
+library(dplyr)
+act_day <- act %>% select ( steps, date) %>% filter(!is.na(steps)) %>% group_by(date) %>% summarize(steps = sum(steps) )
+Steps <- act_day$steps
+med <- median(Steps)
+mea <- mean(Steps)
+
+```
 
 
 
 ## What is mean total number of steps taken per day?
 
+```{r, echo = TRUE,warning=FALSE, message=FALSE,fig.width = 7, fig.height = 7 }
+hist(Steps , breaks = 10, col="orange" )
+legend (16000,15,c("Median ","Mean "),lwd = c(4,1),lty=c(2,1),col=c("royalblue","red"))
+abline(v = med,col = "royalblue",lwd = 4, lty = 2)
+abline(v = mea,col = "red",lwd = 2)
+par(xpd=TRUE)
+legend (0,-10,c(paste("Median ",med),paste("Mean ",mea)))
+print (paste("Median = ",med))
+print (paste("Mean = ",mea))
+```
+
 
 
 ## What is the average daily activity pattern?
 
+```{r, echo = TRUE,warning=FALSE, message=FALSE,fig.width = 7, fig.height = 7 }
+act_min <- act %>% select ( steps, interval) %>% filter(!is.na(steps)) %>% group_by(interval) %>% summarize(steps = mean(steps) )
+plot(act_min,type="l", col="red")
+xymax <- act_min[act_min$steps == max(act_min$steps,na.rm = TRUE),]
+text(xymax$interval + 100,xymax$steps,xymax$interval)
+points(xymax$interval,xymax$steps, pch=20)
+abline(v=xymax$interval, col="pink")
+print (paste("Interval with maximum number of steps = ",xymax$interval))
+
+```
 
 
 ## Imputing missing values
+```{r, echo = TRUE,warning=FALSE, message=FALSE,fig.width = 7, fig.height = 7 }
+# Create a copy of the activity data frame
+filledact <- act
+
+# Create a function to retrieve the rounded interval average
+natoave <- function (interval){
+  round(act_min[act_min$interval == interval,]$steps)
+}
+
+# Replace all NA's in step with it's interval average 
+filledact$steps  <-  ifelse (is.na(filledact$steps),natoave(filledact$interval),filledact$steps)
 
 
+```
+
+
+```{r, echo = TRUE,warning=FALSE, message=FALSE,fig.width = 7, fig.height = 7 }
+filledact_day <- filledact %>% select ( steps, date) %>% filter(!is.na(steps)) %>% group_by(date) %>% summarize(steps = sum(steps) )
+filledactSteps <- filledact_day$steps
+med <- median(filledactSteps)
+mea <- mean(filledactSteps)
+print (paste("Median = ",med))
+print (paste("Mean = ",mea))
+hist(filledactSteps , breaks = 10 )
+legend (16000,15,c("Median ","Mean "),lwd = c(4,1),lty=c(2,1),col=c("royalblue","red"))
+abline(v = med,col = "royalblue",lwd = 4, lty = 2)
+abline(v = mea,col = "red",lwd = 2)
+
+```
+
+####Using the interval average to fill the missing Step values, did not greatly impact the study figures, slightly changing the median and the mean. 
 
 ## Are there differences in activity patterns between weekdays and weekends?
+
